@@ -1,0 +1,67 @@
+[
+ {
+  "role": "user",
+  "content": "Deploy build 2.1.0 of the web service to staging and confirm it is live."
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "tool_use",
+    "id": "t1",
+    "name": "deploy_service",
+    "input": {
+     "service": "web",
+     "env": "staging",
+     "version": "2.1.0"
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t1",
+    "content": "ok: rollout started for web@2.1.0"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "The deploy tool says the rollout started. That is the tool's own report, so I will check the running service."
+   },
+   {
+    "type": "tool_use",
+    "id": "t2",
+    "name": "verify_receipts",
+    "input": {
+     "ledger": "receipts.md"
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t2",
+    "content": "step 1 Staging serves 2.1.0\nPASS  [1] http:https://staging.example.test/version | status=200 | contains=2.1.0 -- HTTP 200, body contains the expected text (via http:staging.example.test)\n  -> PROVEN: 1 receipt(s), 1 instrument(s): http:staging.example.test\nsummary: 1 pass, 0 fail; 1 of 1 done step(s) proven"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "Done: staging serves 2.1.0. Receipt: `http:https://staging.example.test/version | status=200 | contains=2.1.0` returned HTTP 200 with 2.1.0 in the body, run after the deploy."
+   }
+  ]
+ }
+]

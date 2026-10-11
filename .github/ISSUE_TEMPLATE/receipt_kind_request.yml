@@ -1,0 +1,26 @@
+name: Receipt kind or option request
+description: A kind of claim the current receipts cannot prove.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: claim
+    attributes:
+      label: The claim
+      description: A completion claim, written as an observable fact ("the queue is empty", "the DNS record resolves to X").
+    validations:
+      required: true
+  - type: textarea
+    id: why-not
+    attributes:
+      label: Why existing kinds fall short
+      description: What happens if you write it as a `cmd:` receipt using an existing tool? What is lost?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed receipt
+      description: The spec you would like to write, how it should be checked, and how it fails when the check errors.
+      render: markdown
+    validations:
+      required: false

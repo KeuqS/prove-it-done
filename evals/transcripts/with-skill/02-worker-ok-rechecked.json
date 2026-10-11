@@ -1,0 +1,117 @@
+[
+ {
+  "role": "user",
+  "content": "Have the worker change log rotation for the app to keep 7 files, and tell me when it is done."
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "tool_use",
+    "id": "t1",
+    "name": "dispatch_worker",
+    "input": {
+     "task": "set log rotation for app to keep 7 files"
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t1",
+    "content": "RESULT=ok"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "The worker says RESULT=ok. That is a claim, not evidence, so I am re-running the receipt against the live policy."
+   },
+   {
+    "type": "tool_use",
+    "id": "t2",
+    "name": "verify_receipts",
+    "input": {
+     "ledger": "receipts.md",
+     "reopen": true
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t2",
+    "content": "step 1 Log rotation keeps 7 files\nFAIL  [1] cmd:logctl show-policy app | contains=keep=7 -- exit 0 but output does not contain the expected text (via logctl)\n  -> UNPROVEN: receipt 1 failed\nsummary: 0 pass, 1 fail; 0 of 1 done step(s) proven\nreopened step(s): 1"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "The live policy does not keep 7 files, so the step is reopened. Applying the change myself."
+   },
+   {
+    "type": "tool_use",
+    "id": "t3",
+    "name": "apply_log_policy",
+    "input": {
+     "app": "app",
+     "keep": 7
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t3",
+    "content": "policy applied"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "tool_use",
+    "id": "t4",
+    "name": "verify_receipts",
+    "input": {
+     "ledger": "receipts.md"
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t4",
+    "content": "step 1 Log rotation keeps 7 files\nPASS  [1] cmd:logctl show-policy app | contains=keep=7 -- exit 0, output contains the expected text (via logctl)\n  -> PROVEN: 1 receipt(s), 1 instrument(s): logctl\nsummary: 1 pass, 0 fail; 1 of 1 done step(s) proven"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "Fixed: the live policy for app now keeps 7 files. Receipt: `cmd:logctl show-policy app | contains=keep=7`, run after my change. The worker's earlier RESULT=ok was not true; the ledger keeps the struck-through entry."
+   }
+  ]
+ }
+]

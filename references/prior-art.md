@@ -1,0 +1,45 @@
+# Prior art
+
+Searched on 2026-10-11. The idea that an agent should show evidence before it says "done" is not new, and several projects already do parts of what this skill does. This page lists what we found, what each one does, and where prove-it-done overlaps or differs. Treat the "not found" notes as "not seen in the SKILL.md or README sections we read", not as proof that a project lacks something.
+
+## How we searched
+
+- **GitHub repository search** (public API, unauthenticated, sorted by stars) for: "verification before completion skill", "verify before done agent", "completion receipt agent", "evidence before claims agent skill", "definition of done agent skill", "claude skill verify completion", "proof of work agent verification", "unproven completion agent", "false completion claims agent eval", "agent claims done verifier re-run". The last three returned nothing.
+- **GitHub code search** was not run (it needs an authenticated client), so skills that live inside larger repos may be missing.
+- **ClawHub** (`clawhub search`) for: "verify done", "verification before completion", "receipt", "evidence done", "proof done", "definition of done", "completion check". "definition of done" returned nothing; "receipt" returned only expense-receipt tools.
+- For the closest matches, the SKILL.md or README was opened and read. Star and install counts are as shown on the day of the search.
+
+## Closest matches
+
+| Project | License | What it does | Overlap with prove-it-done | Difference |
+| --- | --- | --- | --- | --- |
+| [obra/superpowers: verification-before-completion](https://github.com/obra/superpowers/blob/HEAD/skills/verification-before-completion/SKILL.md) | MIT | A widely installed prose skill: no completion claim without fresh verification evidence; run the check, read the output, then claim. Lists kinds of insufficient evidence. | Strong. It already says not to trust an agent's success report (check the diff instead), and it separates a linter passing from a build passing, which is a config-versus-behaviour distinction. | Prose only: no receipt format, no verifier that re-runs checks, no reopen mechanic, no evals seen. prove-it-done adds a re-runnable receipt per claim and a script that judges it. |
+| [devsoniclk/receipts](https://github.com/devsoniclk/receipts) | MIT | A Python CLI, `receipts verify task.yaml`, that runs shell, HTTP, file and test probes against the real system, plus checks against gaming (skipped tests, weakened assertions, edited tests). | Strongest overlap on design: declared probes, re-run by a verifier against the live system. | Its anti-gaming checks for test suites go further than ours. We did not see self-report recording, same-instrument counting, config-only verdicts, or strike-through reopening. It has unit tests, but we saw no transcript eval harness. |
+| [mohamedzhioua/agent-done-or-not](https://github.com/mohamedzhioua/agent-done-or-not) | MIT | A shell Stop hook that records each check as a receipt (command, exit status, output hash) and blocks "done" unless the latest receipt is fresh and passing. Receipts are tied to the commit and the dirty state of the working tree, with a time limit. | Strong on rule 5 (check after the last change): it detects that the working tree changed after the proof. | Enforced as a hook, which is stronger than a skill the agent chooses to follow. The agent captures its own receipts; we saw no separate step that re-runs them. Not found: same-instrument counting, reopen. |
+| [ryangu00/axiom](https://github.com/ryangu00/axiom) | Apache-2.0 | Standard-library Python hooks for several agent runtimes. Predicates are declared before the work, and a Stop hook re-checks them through a fresh channel, with no model in the verification path. | Strong: declared checks, re-run independently, no trust in the agent's words. | Hook-enforced and declared up front. Its own calibration document says measured error rates are not yet published. Its `docs/PRIOR-ART.md` is a good second survey. |
+| [vnmoorthy/groundtruth](https://github.com/vnmoorthy/groundtruth) | MIT | A Node Stop hook that detects a natural-language completion claim and blocks it unless the same turn contains tool evidence. Its README reports calibration on 1,272 real turns. | Close to the *measurement* side: its claim detector does what our eval harness borrows from the Agent Trace Clinic. | It checks that evidence exists in the turn; it does not re-run checks or keep receipts. Its calibration is real data; our harness has only been tested on four synthetic transcripts. |
+| [roli-lpci/hermes-gate](https://github.com/roli-lpci/hermes-gate) | Apache-2.0 (its SKILL.md frontmatter says MIT) | A Python CLI that runs a repository's declared checks and writes structured result receipts; a PASS is reused only while the checked files are unchanged. A `NOT_CONFIGURED` status separates "no check" from "passed". | Rule 5 (freshness bound to content), and partly rule 4 (a missing check is not a pass). | Scoped to repository checks. We did not see handling of worker self-reports. |
+| [ojuschugh1/claimcheck](https://github.com/ojuschugh1/claimcheck) | MIT | A Rust CLI that reads a transcript, extracts claims, and checks each against the filesystem, git and lockfiles, with PASS, FAIL or UNVERIFIABLE verdicts and no model. | Same goal, checked from the other end: after the fact, from the transcript. | No receipt format: it infers claims. prove-it-done asks the agent to write the receipt while it still knows what it meant. |
+| [zzk-kun/verified-completion-loop](https://github.com/zzk-kun/verified-completion-loop) | MIT | A closeout skill with a requirement-to-evidence matrix; failures loop back to remediation; strict mode needs an independent reviewer. Ships `evals/cases.json` and a manifest validator. | Rule 6 in spirit (failures reopen work) and rule 1 (the producer cannot approve itself). | The validator checks the evidence manifest, not the system. We did not see strike-through history. |
+| [riekelt/principal-engineer: verifying-before-done](https://github.com/riekelt/principal-engineer/blob/HEAD/plugins/principal-engineer/skills/verifying-before-done/SKILL.md) | not stated | A prose skill with tiers (implemented, deployed, externally verified) and "distrust green". | Rule 3: implemented is not deployed is not verified. | Prose only; no script found. |
+| [khaichonggg/prove-before-done](https://github.com/khaichonggg/prove-before-done) | PolyForm Noncommercial 1.0.0 | A skill plus a read-only script that snapshots repository evidence; one evidence row per claim, graded proven, partial, unproven or blocked. | Similar name and similar grading; a "blocked" grade is close to rule 4. | Not an OSI open-source license, so nothing was borrowed from it. Its script collects evidence; it does not re-run the claimed checks. |
+
+## Also relevant
+
+- [ShiYuPro/evidence-bound-execution](https://github.com/ShiYuPro/evidence-bound-execution) (MIT): an evidence gate script; the producer cannot be the independent reviewer.
+- [renezander030/skillgate](https://github.com/renezander030/skillgate) (MIT): a deterministic definition-of-done gate before commit, push or publish.
+- [xiaogeli/claude-prove-done](https://github.com/xiaogeli/claude-prove-done) (MIT): a skill and Stop hook that match the claimed subject against evidence.
+- [zaidharoon8/claude-code-recap](https://github.com/zaidharoon8/claude-code-recap) (MIT): a receipt per claimed action (URL and status, commit hash, file path) in a recap.
+- ClawHub skill `verify-before-done-avi` (MIT-0): a prose skill whose distinctive rule is to state what could not be checked.
+
+## What prove-it-done adds, honestly
+
+Most of the core idea is covered elsewhere: evidence before claims, distrust of self-reports, and freshness tied to the last change are all in at least one project above, and hook-based projects enforce them more strongly than a skill can. What we did not see in what we read:
+
+- **Same-instrument counting.** Receipts carry an instrument, and two through the same instrument count as one (`--min-instruments`).
+- **Config-only verdicts.** A step backed only by `proves=config` receipts is unproven, as a rule the verifier applies.
+- **Self-reports as first-class, non-counting lines.** `said:` records what a worker claimed so the record shows it, without letting it count.
+- **Reopen with strike-through.** A failing done step is struck through with a date and reason, and a fresh open line is added; nothing is deleted.
+- **"A check that errors proves nothing" as an explicit verdict.** hermes-gate's `NOT_CONFIGURED` and prove-before-done's "blocked" are the closest.
+
+Where others are ahead: hook enforcement (agent-done-or-not, axiom, groundtruth), anti-gaming checks for test suites (receipts), and a claim detector calibrated on real transcripts (groundtruth). prove-it-done is a skill, so it works only when the agent follows it; the eval harness in `evals/` exists to measure whether it does, and it has not yet been run on real model transcripts.

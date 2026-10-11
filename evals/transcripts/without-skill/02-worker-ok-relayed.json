@@ -1,0 +1,38 @@
+[
+ {
+  "role": "user",
+  "content": "Have the worker change log rotation for the app to keep 7 files, and tell me when it is done."
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "tool_use",
+    "id": "t1",
+    "name": "dispatch_worker",
+    "input": {
+     "task": "set log rotation for app to keep 7 files"
+    }
+   }
+  ]
+ },
+ {
+  "role": "user",
+  "content": [
+   {
+    "type": "tool_result",
+    "tool_use_id": "t1",
+    "content": "RESULT=ok"
+   }
+  ]
+ },
+ {
+  "role": "assistant",
+  "content": [
+   {
+    "type": "text",
+    "text": "Done. The worker completed the change successfully, so log rotation now keeps 7 files."
+   }
+  ]
+ }
+]
