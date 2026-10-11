@@ -213,8 +213,13 @@ def _check_file(receipt):
     return False, "sha256 is %s..., expected %s..." % (got[:12], want.lower()[:12])
 
 
-class _NoAuthRedirect(urllib.request.HTTPRedirectHandler):
-    pass
+class _HttpOnlyRedirect(urllib.request.HTTPRedirectHandler):
+    """Follow redirects only to http and https URLs (urllib alone would also follow ftp)."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urllib.parse.urlsplit(newurl).scheme.lower() not in ("http", "https"):
+            raise urllib.error.URLError("redirect to a non-http(s) URL refused")
+        return urllib.request.HTTPRedirectHandler.redirect_request(self, req, fp, code, msg, headers, newurl)
 
 
 def _check_http(receipt, default_timeout):
@@ -230,7 +235,7 @@ def _check_http(receipt, default_timeout):
         except ValueError:
             raise SpecError("status= must be one or more integers separated by commas")
     req = urllib.request.Request(url, method="GET", headers={"User-Agent": "prove-it-done-verifier/0.1"})
-    opener = urllib.request.build_opener(_NoAuthRedirect)
+    opener = urllib.request.build_opener(_HttpOnlyRedirect)
     try:
         resp = opener.open(req, timeout=timeout)
         status, body = resp.status, resp.read(HTTP_BODY_LIMIT)
@@ -273,8 +278,17 @@ def _check_commit(receipt):
         notes = ["commit %s exists" % h]
         path = receipt.options.get("path")
         if path:
-            out = _git(repo, "show", "--name-only", "--format=", h).stdout.decode("utf-8", "replace")
-            want = path.replace("\\", "/").lstrip("./")
+            # Files changed relative to the first parent, so a merge commit lists what it
+            # brought into the branch. A root commit lists every file it adds.
+            parents = _git(repo, "rev-list", "--parents", "-n", "1", h).stdout.decode().split()[1:]
+            if parents:
+                out = _git(repo, "diff", "--name-only", parents[0], h)
+            else:
+                out = _git(repo, "show", "--name-only", "--format=", h)
+            out = out.stdout.decode("utf-8", "replace")
+            want = path.replace("\\", "/")
+            while want.startswith("./"):
+                want = want[2:]
             if want not in [f.strip() for f in out.splitlines() if f.strip()]:
                 return False, "commit %s does not touch %s" % (h, path)
             notes.append("touches %s" % path)

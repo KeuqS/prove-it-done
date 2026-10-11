@@ -22,7 +22,7 @@ KIND:TARGET [ | key=value ]...
 | `file:` | a path (`~` expands) | it is a regular file, and its SHA-256 equals `sha256` if given | `sha256=HEX` |
 | `dir:` | a path | it is a directory | |
 | `http:` | an `http://` or `https://` URL | a GET returns a 2xx status (or one listed in `status`), after redirects, and the first 2 MB of the body contain `contains` if given | `status=200[,204]`, `contains=TEXT`, `timeout=S` |
-| `commit:` | a commit hash, 7 to 64 hex characters | the commit exists in `repo` (default `.`); it changes `path` if given; it is an ancestor of `branch` if given | `repo=PATH`, `path=FILE`, `branch=REF` |
+| `commit:` | a commit hash, 7 to 64 hex characters | the commit exists in `repo` (default `.`); it changes `path` if given (compared with its first parent, so a merge commit counts the files it brought into the branch); it is an ancestor of `branch` if given | `repo=PATH`, `path=FILE`, `branch=REF` |
 | `said:` | free text | never: printed as `CLAIM` and not counted | |
 
 Options that apply to every kind:

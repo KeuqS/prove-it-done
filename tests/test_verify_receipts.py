@@ -35,6 +35,11 @@ class _Handler(http.server.BaseHTTPRequestHandler):
         if self.path.startswith("/ok"):
             body = b"version 2.1.0 ready"
             self.send_response(200)
+        elif self.path.startswith("/to-ftp"):
+            self.send_response(302)
+            self.send_header("Location", "ftp://127.0.0.1/x")
+            self.end_headers()
+            return
         elif self.path.startswith("/moved"):
             self.send_response(302)
             self.send_header("Location", "/ok")
@@ -190,6 +195,12 @@ class HttpTests(unittest.TestCase):
     def test_redirect_followed(self):
         self.assertTrue(check("http:%s/moved | status=200 | contains=2.1.0" % self.base)[0])
 
+    def test_redirect_to_other_scheme_refused(self):
+        ok, msg = check("http:%s/to-ftp" % self.base)
+        self.assertFalse(ok)
+        self.assertIn("non-http(s)", msg)
+        self.assertIn("proves nothing", msg)
+
     def test_contains(self):
         ok, msg = check("http:%s/ok | contains=3.0.0" % self.base)
         self.assertFalse(ok)
@@ -232,6 +243,22 @@ class CommitTests(unittest.TestCase):
         git("add", "other.txt")
         git("commit", "-q", "-m", "two")
         cls.h2 = git("rev-parse", "HEAD")
+        # a dotfile commit on main, then a non-conflicting merge of side into main
+        git("checkout", "-q", "main")
+        with open(os.path.join(cls.d, ".gitignore"), "w") as fh:
+            fh.write("*.pyc\n")
+        git("add", ".gitignore")
+        git("commit", "-q", "-m", "dotfile")
+        cls.h3 = git("rev-parse", "HEAD")
+        git("merge", "-q", "--no-ff", "--no-edit", "side")
+        cls.merge = git("rev-parse", "HEAD")
+        # a commit that exists only on side
+        git("checkout", "-q", "side")
+        with open(os.path.join(cls.d, "late.txt"), "w") as fh:
+            fh.write("late\n")
+        git("add", "late.txt")
+        git("commit", "-q", "-m", "three")
+        cls.h4 = git("rev-parse", "HEAD")
 
     @classmethod
     def tearDownClass(cls):
@@ -244,12 +271,23 @@ class CommitTests(unittest.TestCase):
         self.assertIn("not found", msg)
 
     def test_path(self):
-        self.assertTrue(check("commit:%s | repo=%s | path=app.py" % (self.h1, self.d))[0])
+        self.assertTrue(check("commit:%s | repo=%s | path=app.py" % (self.h1, self.d))[0])  # root commit
         self.assertFalse(check("commit:%s | repo=%s | path=other.txt" % (self.h1, self.d))[0])
+
+    def test_dotfile_path(self):
+        self.assertTrue(check("commit:%s | repo=%s | path=.gitignore" % (self.h3, self.d))[0])
+        self.assertTrue(check("commit:%s | repo=%s | path=./.gitignore" % (self.h3, self.d))[0])
+
+    def test_merge_commit_path(self):
+        # a merge brings other.txt into main; the receipt should see that
+        ok, msg = check("commit:%s | repo=%s | path=other.txt | branch=main" % (self.merge, self.d))
+        self.assertTrue(ok, msg)
+        self.assertFalse(check("commit:%s | repo=%s | path=app.py" % (self.merge, self.d))[0])
 
     def test_branch(self):
         self.assertTrue(check("commit:%s | repo=%s | branch=main" % (self.h1, self.d))[0])
-        ok, msg = check("commit:%s | repo=%s | branch=main" % (self.h2, self.d))
+        self.assertTrue(check("commit:%s | repo=%s | branch=main" % (self.h2, self.d))[0])  # merged
+        ok, msg = check("commit:%s | repo=%s | branch=main" % (self.h4, self.d))
         self.assertFalse(ok)
         self.assertIn("not on main", msg)
 

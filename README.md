@@ -55,7 +55,7 @@ Receipt kinds: `cmd:` (no shell), `sh:` (shell, opt-in), `file:` (exists, SHA-25
 
 **Measure it.** `evals/evals.json` has eight test prompts. `evals/run.md` describes a with/without comparison scored by a deterministic unproven-completion detector, and shows the scorer working on four synthetic transcripts.
 
-**Test.** `python3 -m unittest discover -s tests` (also run in CI on Linux, macOS and Windows).
+**Test.** `python3 -m unittest discover -s tests`. `.github/workflows/ci.yml` runs the same tests on Linux, macOS and Windows once the repository is on GitHub.
 
 ## Limits
 

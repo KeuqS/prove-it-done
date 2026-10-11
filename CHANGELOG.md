@@ -13,4 +13,4 @@ All notable changes to this project are listed here. The format follows [Keep a 
 - `references/`: receipt format, the rules in depth, and a prior-art survey.
 - `examples/`: a deploy, a config change, a published page, and a worker whose "ok" was false.
 - `evals/`: eight test prompts, a transcript scorer built on the Agent Trace Clinic's `unproven_completion` detector, four synthetic transcripts, and a with/without protocol.
-- Unit tests, and CI on Linux, macOS and Windows.
+- Unit tests, and a CI workflow for Linux, macOS and Windows.
